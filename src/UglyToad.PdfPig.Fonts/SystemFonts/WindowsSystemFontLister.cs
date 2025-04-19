@@ -29,7 +29,8 @@
             var psFonts = Path.Combine(winDir, "PSFonts");
             var psFontsFullPath = Path.GetFullPath(psFonts);
 
-            if (psFontsFullPath.StartsWith(winDir, StringComparison.OrdinalIgnoreCase) && Directory.Exists(psFontsFullPath))
+            var normalizedWinDir = Path.GetFullPath(winDir) + Path.DirectorySeparatorChar;
+            if (psFontsFullPath.StartsWith(normalizedWinDir, StringComparison.OrdinalIgnoreCase) && Directory.Exists(psFontsFullPath))
             {
                 var files = Directory.GetFiles(psFontsFullPath);
 
