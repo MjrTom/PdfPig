@@ -10,6 +10,12 @@
         {
             var winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
 
+            // Validate the Windows directory path
+            if (string.IsNullOrWhiteSpace(winDir) || !Path.IsPathRooted(winDir) || !Directory.Exists(winDir))
+            {
+                throw new InvalidOperationException("The Windows directory path is invalid.");
+            }
+
             var fonts = Path.Combine(winDir, "Fonts");
             var fontsFullPath = Path.GetFullPath(fonts);
 
