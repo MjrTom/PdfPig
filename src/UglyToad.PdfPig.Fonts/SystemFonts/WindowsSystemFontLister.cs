@@ -10,11 +10,18 @@
         {
             var winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
 
-            var fonts = Path.Combine(winDir, "Fonts");
-
-            if (Directory.Exists(fonts))
+            // Validate the Windows directory path
+            if (string.IsNullOrWhiteSpace(winDir) || !Path.IsPathRooted(winDir) || !Directory.Exists(winDir))
             {
-                var files = Directory.GetFiles(fonts);
+                throw new InvalidOperationException("The Windows directory path is invalid.");
+            }
+
+            var fonts = Path.Combine(winDir, "Fonts");
+            var fontsFullPath = Path.GetFullPath(fonts);
+
+            if (fontsFullPath.StartsWith(winDir + Path.DirectorySeparatorChar) && Directory.Exists(fontsFullPath))
+            {
+                var files = Directory.GetFiles(fontsFullPath);
 
                 foreach (var file in files)
                 {
@@ -26,10 +33,13 @@
             }
 
             var psFonts = Path.Combine(winDir, "PSFonts");
+            var psFontsFullPath = Path.GetFullPath(psFonts);
 
-            if (Directory.Exists(psFonts))
+            // Ensure the path is securely contained within the Windows directory
+            if (psFontsFullPath.StartsWith(Path.GetFullPath(winDir) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) 
+                && Directory.Exists(psFontsFullPath))
             {
-                var files = Directory.GetFiles(fonts);
+                var files = Directory.GetFiles(psFontsFullPath);
 
                 foreach (var file in files)
                 {
