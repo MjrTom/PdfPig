@@ -11,8 +11,9 @@
             var winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
 
             var fonts = Path.Combine(winDir, "Fonts");
+            fonts = Path.GetFullPath(fonts);
 
-            if (Directory.Exists(fonts))
+            if (fonts.StartsWith(winDir, StringComparison.OrdinalIgnoreCase) && Directory.Exists(fonts))
             {
                 var files = Directory.GetFiles(fonts);
 
@@ -26,10 +27,11 @@
             }
 
             var psFonts = Path.Combine(winDir, "PSFonts");
+            psFonts = Path.GetFullPath(psFonts);
 
-            if (Directory.Exists(psFonts))
+            if (psFonts.StartsWith(winDir.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) && Directory.Exists(psFonts))
             {
-                var files = Directory.GetFiles(fonts);
+                var files = Directory.GetFiles(psFonts);
 
                 foreach (var file in files)
                 {
