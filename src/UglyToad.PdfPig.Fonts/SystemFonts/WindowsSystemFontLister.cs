@@ -6,6 +6,12 @@
 
     internal sealed class WindowsSystemFontLister : ISystemFontLister
     {
+        private static bool IsSubdirectory(string baseDir, string subDir)
+        {
+            var baseDirFullPath = Path.GetFullPath(baseDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var subDirFullPath = Path.GetFullPath(subDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            return subDirFullPath.StartsWith(baseDirFullPath, StringComparison.OrdinalIgnoreCase);
+        }
         public IEnumerable<SystemFontRecord> GetAllFonts()
         {
             var winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
@@ -13,7 +19,7 @@
             var fonts = Path.Combine(winDir, "Fonts");
             var resolvedFontsPath = Path.GetFullPath(fonts);
 
-            if (resolvedFontsPath.StartsWith(winDir + Path.DirectorySeparatorChar) && Directory.Exists(resolvedFontsPath))
+            if (IsSubdirectory(winDir, resolvedFontsPath) && Directory.Exists(resolvedFontsPath))
             {
                 var files = Directory.GetFiles(resolvedFontsPath);
 
@@ -29,7 +35,7 @@
             var psFonts = Path.Combine(winDir, "PSFonts");
             var resolvedPsFontsPath = Path.GetFullPath(psFonts);
 
-            if (resolvedPsFontsPath.StartsWith(winDir + Path.DirectorySeparatorChar) && Directory.Exists(resolvedPsFontsPath))
+            if (IsSubdirectory(winDir, resolvedPsFontsPath) && Directory.Exists(resolvedPsFontsPath))
             {
                 var files = Directory.GetFiles(resolvedPsFontsPath);
 
