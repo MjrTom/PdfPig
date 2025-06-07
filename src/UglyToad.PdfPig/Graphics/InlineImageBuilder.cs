@@ -1,10 +1,8 @@
 ﻿namespace UglyToad.PdfPig.Graphics
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Xml.Linq;
     using Content;
     using Core;
     using Filters;
@@ -27,7 +25,7 @@
         /// <summary>
         /// Inline image bytes.
         /// </summary>
-        public ReadOnlyMemory<byte> Bytes { get; internal set; }
+        public Memory<byte> Bytes { get; internal set; }
 
         internal InlineImage CreateInlineImage(
             in TransformationMatrix transformationMatrix,
@@ -55,7 +53,7 @@
             var bitsPerComponent = GetByKeys<NumericToken>(NameToken.BitsPerComponent, NameToken.Bpc, !isMask)?.Int ?? 1;
             NameToken? colorSpaceName = null;
 
-            var imgDic = new DictionaryToken(Properties ?? new Dictionary<NameToken, IToken>());
+            var imgDic = new DictionaryToken(Properties ?? new Dictionary<NameToken, IToken>()).Resolve(tokenScanner);
 
             XObjectImage? softMaskImage = null;
             if (imgDic.TryGet(NameToken.Smask, tokenScanner, out StreamToken? sMaskToken))

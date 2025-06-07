@@ -16,7 +16,7 @@
     /// </summary>
     public class XObjectImage : IPdfImage
     {
-        private readonly Lazy<ReadOnlyMemory<byte>>? memoryFactory;
+        private readonly Lazy<Memory<byte>>? memoryFactory;
 
         /// <inheritdoc />
         public PdfRectangle Bounds { get; }
@@ -56,16 +56,16 @@
         public DictionaryToken ImageDictionary { get; }
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> RawMemory { get; }
+        public Memory<byte> RawMemory { get; }
 
         /// <inheritdoc />
-        public ReadOnlySpan<byte> RawBytes => RawMemory.Span;
+        public Span<byte> RawBytes => RawMemory.Span;
 
         /// <inheritdoc />
         public ColorSpaceDetails? ColorSpaceDetails { get; }
 
         /// <inheritdoc />
-        public IPdfImage? SoftMaskImage { get; }
+        public IPdfImage? MaskImage { get; }
 
         /// <summary>
         /// Creates a new <see cref="XObjectImage"/>.
@@ -80,8 +80,8 @@
             bool interpolate,
             IReadOnlyList<double> decode,
             DictionaryToken imageDictionary,
-            ReadOnlyMemory<byte> rawMemory,
-            Lazy<ReadOnlyMemory<byte>>? bytes,
+            Memory<byte> rawMemory,
+            Lazy<Memory<byte>>? bytes,
             ColorSpaceDetails? colorSpaceDetails,
             IPdfImage? softMaskImage)
         {
@@ -98,11 +98,11 @@
             RawMemory = rawMemory;
             ColorSpaceDetails = colorSpaceDetails;
             memoryFactory = bytes;
-            SoftMaskImage = softMaskImage;
+            MaskImage = softMaskImage;
         }
 
         /// <inheritdoc />
-        public bool TryGetBytesAsMemory(out ReadOnlyMemory<byte> bytes)
+        public bool TryGetBytesAsMemory(out Memory<byte> bytes)
         {
             bytes = null;
             if (memoryFactory is null)

@@ -113,7 +113,7 @@
 
                 if (tokenizer == null)
                 {
-                    if (ReadHelper.IsWhitespace(currentByte))
+                    if (ReadHelper.IsWhitespace(currentByte) || char.IsControl(c))
                     {
                         isSkippingSymbol = false;
                         continue;
@@ -208,7 +208,7 @@
                         // Special case handling for inline images.
                         var imageData = ReadInlineImageData();
                         isInInlineImage = false;
-                        CurrentToken = new InlineImageDataToken(new ReadOnlyMemory<byte>([..imageData]));
+                        CurrentToken = new InlineImageDataToken(new Memory<byte>([..imageData]));
                         hasBytePreRead = false;
                         return true;
                     }

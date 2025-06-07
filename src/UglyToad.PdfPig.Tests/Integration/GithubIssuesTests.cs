@@ -8,6 +8,109 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issue1054()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("MOZILLA-11518-0.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int p = 1; p <= document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    foreach (var image in page.GetImages())
+                    {
+                        Assert.NotNull(image);
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public void Issue1050()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("SpookyPass.pdf");
+            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }));
+            Assert.Equal("Avoiding infinite recursion in ObjectLocationProvider.TryGetOffset() as 'offset' and 'reference.ObjectNumber' have the same value and opposite signs.", ex.Message);
+        }
+
+        [Fact]
+        public void Issue1047()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("Hang.pdf");
+
+            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }));
+            Assert.Equal("The cross reference was not found.", ex.Message);
+        }
+
+        [Fact]
+        public void Issue1048()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("InvalidCast.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page.Letters);
+
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+
+                Assert.Single(blocks);
+                Assert.Equal("hey, i'm a bug.", blocks[0].Text);
+            }
+        }
+
+        [Fact]
+        public void Issue554()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("2022.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int p = 1; p <= document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    Assert.NotNull(page.Letters);
+
+                    if (p < document.NumberOfPages)
+                    {
+                        Assert.NotEmpty(page.Letters);
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public void Issue822()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("FileData_7.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int p = 1; p <= document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    Assert.NotNull(page.Letters);
+                }
+            }
+        }
+        
+        [Fact]
+        public void Issue1040()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("pdfpig-issue-1040.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true}))
+            {
+                var page1 = document.GetPage(1);
+                Assert.NotEmpty(page1.Letters);
+
+                var page2 = document.GetPage(2);
+                Assert.NotEmpty(page2.Letters);
+            }
+        }
+        
+        [Fact]
         public void Issue1013()
         {
             // NB: We actually do not fix issue 953 here, but another bug found with the same document.

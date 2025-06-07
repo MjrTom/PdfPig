@@ -5,6 +5,7 @@
     using System.IO;
     using System.IO.Compression;
     using Tokens;
+    using UglyToad.PdfPig.Core;
     using Util;
 
     /// <summary>
@@ -31,40 +32,30 @@
         public bool IsSupported { get; } = true;
 
         /// <inheritdoc />
-        public ReadOnlyMemory<byte> Decode(ReadOnlySpan<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
+        public Memory<byte> Decode(Memory<byte> input, DictionaryToken streamDictionary, IFilterProvider filterProvider, int filterIndex)
         {
             var parameters = DecodeParameterResolver.GetFilterParameters(streamDictionary, filterIndex);
 
             var predictor = parameters.GetIntOrDefault(NameToken.Predictor, -1);
 
-            var bytes = input.ToArray();
             try
             {
-                var decompressed = Decompress(bytes);
-
-                if (predictor == -1)
-                {
-                    return decompressed;
-                }
-
                 var colors = Math.Min(parameters.GetIntOrDefault(NameToken.Colors, DefaultColors), 32);
                 var bitsPerComponent = parameters.GetIntOrDefault(NameToken.BitsPerComponent, DefaultBitsPerComponent);
                 var columns = parameters.GetIntOrDefault(NameToken.Columns, DefaultColumns);
-
-                return PngPredictor.Decode(decompressed, predictor, colors, bitsPerComponent, columns);
+                return Decompress(input, predictor, colors, bitsPerComponent, columns);
             }
             catch
             {
                 // ignored.
             }
 
-            return bytes;
+            return input;
         }
 
-        private static byte[] Decompress(byte[] input)
+        private static Memory<byte> Decompress(Memory<byte> input, int predictor, int colors, int bitsPerComponent, int columns)
         {
-            using (var memoryStream = new MemoryStream(input))
-            using (var output = new MemoryStream())
+            using (var memoryStream = MemoryHelper.AsReadOnlyMemoryStream(input))
             {
                 // The first 2 bytes are the header which DeflateStream does not support.
                 memoryStream.ReadByte();
@@ -73,9 +64,13 @@
                 try
                 {
                     using (var deflate = new DeflateStream(memoryStream, CompressionMode.Decompress))
+                    using (var output = new MemoryStream((int)(input.Length * 1.5)))
+                    using (var f = PngPredictor.WrapPredictor(output, predictor, colors, bitsPerComponent, columns))
                     {
-                        deflate.CopyTo(output);
-                        return output.ToArray();
+                        deflate.CopyTo(f);
+                        f.Flush();
+
+                        return output.AsMemory();
                     }
                 }
                 catch (InvalidDataException ex)
