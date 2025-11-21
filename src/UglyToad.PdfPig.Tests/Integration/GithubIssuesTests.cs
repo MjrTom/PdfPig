@@ -4,10 +4,105 @@
     using DocumentLayoutAnalysis.PageSegmenter;
     using DocumentLayoutAnalysis.WordExtractor;
     using PdfPig.Core;
+    using PdfPig.Tokens;
     using SkiaSharp;
+    using UglyToad.PdfPig.AcroForms;
+    using UglyToad.PdfPig.AcroForms.Fields;
 
     public class GithubIssuesTests
     {
+        [Fact]
+        public void Issue1208()
+        {
+            string[] files = ["Input.visible.pdf", "Input.invisible.pdf"];
+
+            foreach (var file in files)
+            {
+                var path = IntegrationHelpers.GetSpecificTestDocumentPath(file);
+
+                using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+                {
+                    Assert.True(document.TryGetForm(out AcroForm form));
+                    Assert.Single(form.Fields);
+                    Assert.Equal(AcroFieldType.Signature, form.Fields[0].FieldType);
+                }
+            }
+        }
+
+        [Fact]
+        public void Issue1209()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("MOZILLA-9176-2.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int p = 1; p <= document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    Assert.NotNull(page);
+
+                    foreach (var image in page.GetImages())
+                    {
+                        Assert.True(image.ImageDictionary.ContainsKey(NameToken.Height)); // Was missing
+                        Assert.True(image.ImageDictionary.ContainsKey(NameToken.Width));
+
+                        if (image.ImageDictionary.TryGet<DictionaryToken>(NameToken.DecodeParms, out var decodeParms))
+                        {
+                            Assert.True(decodeParms.ContainsKey(NameToken.Columns)); // Was missing
+                            Assert.True(decodeParms.ContainsKey(NameToken.Rows));
+                        }
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public void Revert_e11dc6b()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("GHOSTSCRIPT-699488-0.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                var images = page.GetImages().ToArray();
+
+                Assert.Equal(9, images.Length);
+
+                foreach (var image in images)
+                {
+                    if (image.ImageDictionary.TryGet(NameToken.Filter, out var token) && token is NameToken nt)
+                    {
+                        if (nt.Data.Contains("DCT"))
+                        {
+                            continue;
+                        }
+                    }
+
+                    Assert.True(image.TryGetPng(out _));
+                }
+
+                var paths = page.Paths;
+                Assert.Equal(66, paths.Count);
+                var letters = page.Letters;
+                Assert.Equal(2685, letters.Count);
+            }
+        }
+
+        [Fact]
+        public void Issue1199()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("TrueTypeTablesGlyphDataTableReadGlyphsError.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                for (int p = 1; p <= document.NumberOfPages; p++)
+                {
+                    var page = document.GetPage(p);
+                    Assert.NotNull(page);
+                }
+            }
+        }
+
         [Fact]
         public void Issue1183()
         {
