@@ -12,6 +12,64 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1250()
+        {
+            // Issue comes from HasFormXObjectCircularReference
+            var path = IntegrationHelpers.GetDocumentPath("SPE8EF26T0545.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+                Assert.NotEmpty(page.Letters);
+
+                page = document.GetPage(7);
+                Assert.NotNull(page);
+                Assert.NotEmpty(page.Letters);
+            }
+
+            // Ensure still no StackOverflowException
+            using (var document = PdfDocument.Open(IntegrationHelpers.GetDocumentPath("issue_671")))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+                Assert.NotEmpty(page.Letters);
+            }
+        }
+
+        [Fact]
+        public void Issues1248()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("jtehm-melillo-2679746.pdf");
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                foreach (var letter in page.Letters)
+                {
+                    var font = letter.GetFont();
+
+                    if (font?.Name?.Data.Contains("TimesLT") == true)
+                    {
+                        Assert.True(font.TryGetPath(100, out _));
+                    }
+                }
+            }
+        }
+        
+        [Fact]
+        public void Issues1238()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("6.Secrets.to.Startup.Success.PDFDrive.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(159);
+                Assert.NotNull(page);
+                Assert.StartsWith("uct. At the longer-cycle, broader end of the spectrum are identity-level", page.Text);
+                Assert.Equal(0, page.Rotation.Value);
+            }
+        }
+
+        [Fact]
         public void Issue1217()
         {
             var path = IntegrationHelpers.GetSpecificTestDocumentPath("stackoverflow_error.pdf");
