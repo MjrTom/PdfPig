@@ -91,7 +91,7 @@
 
             var code = CMap.ReadCode(bytes, useLenientParsing);
 
-            codeLength = (int)(bytes.CurrentOffset - current);
+            codeLength = (int)(bytes.CurrentOffset - current) + 1;
 
             return code;
         }
@@ -154,9 +154,9 @@
 
             boundingBox = CidFont.GetFontMatrix(characterIdentifier).Transform(boundingBox);
 
-            var width = CidFont.GetWidthFromFont(characterIdentifier);
+            var width = CidFont.GetWidthFromDictionary(characterIdentifier);
 
-            var advanceWidth = GetFontMatrix().TransformX(width);
+            var advanceWidth = width / 1000.0;
 
             var result = new CharacterBoundingBox(boundingBox, advanceWidth);
 

@@ -71,13 +71,13 @@
             var subType = dictionary.GetNameOrDefault(NameToken.Subtype);
             if (NameToken.CidFontType0.Equals(subType))
             {
-                return new Type0CidFont(fontProgram!, type!, subType!, baseFont!, systemInfo, descriptor!, verticalWritingMetrics, widths, defaultWidth);
+                var cidToGid = GetCharacterIdentifierToGlyphIndexMap(dictionary);
+                return new Type0CidFont(fontProgram!, type!, subType!, baseFont!, systemInfo, descriptor!, verticalWritingMetrics, widths, defaultWidth, cidToGid);
             }
 
             if (NameToken.CidFontType2.Equals(subType))
             {
                 var cidToGid = GetCharacterIdentifierToGlyphIndexMap(dictionary);
-
                 return new Type2CidFont(type!, subType!, baseFont!, systemInfo, descriptor!, fontProgram, verticalWritingMetrics, widths, defaultWidth, cidToGid);
             }
 
@@ -115,7 +115,7 @@
                             var font = CompactFontFormatParser.Parse(new CompactFontFormatData(fontFile));
                             return new PdfCidCompactFontFormatFont(font);
                         }
-                        
+
                         var input = new TrueTypeDataBytes(new MemoryInputBytes(fontFile));
                         var ttf = TrueTypeFontParser.Parse(input);
                         return new PdfCidTrueTypeFont(ttf);
@@ -256,7 +256,7 @@
                     }
                 }
             }
-            
+
             return new VerticalWritingMetrics(dw2, verticalDisplacements, positionVectors);
         }
 
@@ -264,12 +264,16 @@
         {
             if (!dictionary.TryGet(NameToken.CidSystemInfo, out var cidEntry))
             {
-                throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: {dictionary}");
+                throw new InvalidFontFormatException($"No CID System Info was found in the CID Font dictionary: {dictionary}.");
             }
 
             if (!(cidEntry is DictionaryToken cidDictionary))
             {
-                cidDictionary = DirectObjectFinder.Get<DictionaryToken>(cidEntry, pdfScanner);
+                cidDictionary = DirectObjectFinder.Get<DictionaryToken>(cidEntry, pdfScanner)!;
+                if (cidDictionary is null)
+                {
+                    throw new InvalidFontFormatException($"Invalid CID System Info was found in the CID Font dictionary: {dictionary} (token: {cidEntry}).");
+                }
             }
 
             var registry = SafeKeyAccess(cidDictionary, NameToken.Registry);
@@ -342,7 +346,7 @@
             {
                 return false;
             }
-            
+
             // See https://docs.fileformat.com/font/cff/
             // https://adobe-type-tools.github.io/font-tech-notes/pdfs/5176.CFF.pdf
             byte major = data[0]; // Major version

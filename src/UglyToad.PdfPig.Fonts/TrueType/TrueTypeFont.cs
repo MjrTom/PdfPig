@@ -137,16 +137,23 @@
                      *
                      * This is to fix P2P-33713919.pdf
                      * See https://github.com/BobLd/PdfPig.Rendering.Skia/issues/46
-                     * TODO - Add test coverage and need to review if the logic belongs here
+                     *
+                     * When used as a CIDFont the CID is first mapped to a glyph index via the supplied
+                     * mapping (the CIDToGIDMap, or Identity when none), then resolved by glyph id in the
+                     * embedded CFF (see CompactFontFormatFont.GetCharacterName).
+                     *
+                     * See https://github.com/UglyToad/PdfPig/issues/1320
                      */
 
-                    var name = cffFontCollection.FirstFont.GetCharacterName(characterCode, true); // TODO cid?
+                    var cffFont = cffFontCollection.FirstFont;
+                    int cffGlyphId = characterCodeToGlyphId?.Invoke(characterCode) ?? characterCode;
+                    var name = cffFont.GetCharacterName(cffGlyphId, true);
                     if (string.IsNullOrEmpty(name))
                     {
                         return false;
                     }
 
-                    var bbox = cffFontCollection.FirstFont.GetCharacterBoundingBox(name);
+                    var bbox = cffFont.GetCharacterBoundingBox(name);
                     if (bbox.HasValue)
                     {
                         boundingBox = bbox.Value;
@@ -201,15 +208,23 @@
                      *
                      * This is to fix P2P-33713919.pdf
                      * See https://github.com/BobLd/PdfPig.Rendering.Skia/issues/46
-                     * TODO - Add test coverage and need to review if the logic belongs here
+                     *
+                     * When used as a CIDFont the CID is first mapped to a glyph index via the supplied
+                     * mapping (the CIDToGIDMap, or Identity when none), then resolved by glyph id in the
+                     * embedded CFF (see CompactFontFormatFont.GetCharacterName).
+                     *
+                     * See https://github.com/UglyToad/PdfPig/issues/1320
                      */
 
-                    var name = cffFontCollection.FirstFont.GetCharacterName(characterCode, true);
+                    var cffFont = cffFontCollection.FirstFont;
+                    int cffGlyphId = characterCodeToGlyphId?.Invoke(characterCode) ?? characterCode;
+                    var name = cffFont.GetCharacterName(cffGlyphId, true);
                     if (string.IsNullOrEmpty(name))
                     {
                         return false;
                     }
-                    return cffFontCollection.FirstFont.TryGetPath(name, out path);
+
+                    return cffFont.TryGetPath(name, out path);
                 }
 
                 return false;

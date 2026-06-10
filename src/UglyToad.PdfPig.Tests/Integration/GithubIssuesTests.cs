@@ -12,6 +12,96 @@
     public class GithubIssuesTests
     {
         [Fact]
+        public void Issues1237()
+        {
+            var path = IntegrationHelpers.GetSpecificTestDocumentPath("issues-1237.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true }))
+            {
+                var page = document.GetPage(1);
+                Assert.NotNull(page);
+                Assert.NotEmpty(page.Text);
+            }
+        }
+
+        [Fact]
+        public void Issues1309()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("LKR824191.pdf");
+
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, UseActualText = true }))
+            {
+                var page = document.GetPage(1);
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+                Assert.Equal(23, blocks.Count);
+
+                var text = blocks[13].Text;
+                Assert.Equal("-5,15 -5,15 -1,24 -6,39", text);
+            }
+        }
+
+        [Fact]
+        public void Issues1297_1()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("soundandvision.pdf");
+
+            // UseActualText = true
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, UseActualText = true }))
+            {
+                var page = document.GetPage(1);
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+                Assert.Equal(24, blocks.Count);
+
+                var text = blocks[18].Text;
+                Assert.Equal("Subtotal:\nTax:\nTotal (EUR):\nReceived:\nTo be paid (EUR):", text);
+            }
+
+            // UseActualText = false
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, UseActualText = false }))
+            {
+                var page = document.GetPage(1);
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+                Assert.Equal(24, blocks.Count);
+
+                var text = blocks[18].Text;
+                Assert.Equal("Subtotal:\nTax:\nTotal EUR\nReceived:\nTo be paid EUR", text);
+            }
+        }
+
+        [Fact]
+        public void Issues1297_2()
+        {
+            var path = IntegrationHelpers.GetDocumentPath("Arve.nr.1615.17.04.2026.pdf");
+
+            // UseActualText = true
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, UseActualText = true }))
+            {
+                var page = document.GetPage(1);
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+                Assert.Equal(11, blocks.Count);
+
+                var text = blocks[6].Text;
+                Assert.Equal("Kogus\nÜhik\n1\nkmpl\nVahesumma:\nSoodustus (10%):\nSumma käibemaksuta:\nKäibemaks (24%):\nKokku (EUR):", text);
+            }
+
+            // UseActualText = false
+            using (var document = PdfDocument.Open(path, new ParsingOptions() { UseLenientParsing = true, UseActualText = false }))
+            {
+                var page = document.GetPage(1);
+                var words = NearestNeighbourWordExtractor.Instance.GetWords(page.Letters);
+                var blocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
+                Assert.Equal(11, blocks.Count);
+
+                var text = blocks[6].Text;
+                Assert.Equal("Kogus\nÜhik\n1\nkmpl\nVahesumma:\nSoodustus 10%\nSumma käibemaksuta:\nKäibemaks 24%\nKokku EUR", text);
+            }
+        }
+
+        [Fact]
         public void Issues1274()
         {
             // Minimal PDF with self-referencing object: "1 0 obj 1 0 R"
@@ -35,7 +125,7 @@
 
             var options = new ParsingOptions { MaxStackDepth = 256 };
             using var ms = new MemoryStream(payload);
-            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(ms, options));
+            var ex = Assert.Throws<PdfDocumentStackDepthException>(() => PdfDocument.Open(ms, options));
             Assert.Equal($"Exceeded maximum nesting depth of {options.MaxStackDepth}.", ex.Message);
             return;
 
@@ -120,10 +210,9 @@
 
             var options = new ParsingOptions()
             {
-                UseLenientParsing = true,
-                MaxStackDepth = 100
+                UseLenientParsing = true
             };
-            var ex = Assert.Throws<PdfDocumentFormatException>(() => PdfDocument.Open(path, options));
+            var ex = Assert.Throws<PdfDocumentStackDepthException>(() => PdfDocument.Open(path, options));
             Assert.Equal($"Exceeded maximum nesting depth of {options.MaxStackDepth}.", ex.Message);
         }
 
